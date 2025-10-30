@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import textToSpeech from "@google-cloud/text-to-speech";
 import { Buffer } from "buffer";
 
-const client = new textToSpeech.TextToSpeechClient();
+const credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT_JSON || "{}");
+
+const client = new textToSpeech.TextToSpeechClient({
+  credentials,
+});
 
 export async function POST(req: Request) {
   try {
