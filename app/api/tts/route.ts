@@ -32,7 +32,6 @@ export async function POST(req: Request) {
   Nicole: "en-AU-Standard-A",  // Female
   Russell: "en-AU-Standard-B", // Male
   Raveena: "en-IN-Standard-A", // Female
-
   // European
   Vitoria: "pt-PT-Standard-A",
   Celine: "fr-FR-Standard-A",
