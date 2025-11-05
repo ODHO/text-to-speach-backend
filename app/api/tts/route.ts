@@ -20,58 +20,53 @@ export async function POST(req: Request) {
     // Map old voice names to Google equivalents
   const voiceNameMap: Record<string, string> = {
   // English
-  Brian: "en-GB-Neural2-B",   // ✅ Male
-  Amy: "en-GB-Neural2-A",     // ✅ Female
-  Emma: "en-GB-Neural2-C",    // ✅ Female
-  Joey: "en-US-Neural2-D",    // Male
-  Justin: "en-US-Neural2-B",  // Male (child-like)
-  Matthew: "en-US-Neural2-A", // Male
-  Ivy: "en-US-Neural2-F",     // Female (child)
-  Joanna: "en-US-Neural2-C",  // Female
-  Salli: "en-US-Neural2-G",   // Female
-  Nicole: "en-AU-Neural2-A",  // Female
-  Russell: "en-AU-Neural2-B", // Male
-  Raveena: "en-IN-Neural2-A", // Female
+  Brian: "en-GB-Standard-B",   // ✅ Male
+  Amy: "en-GB-Standard-A",     // ✅ Female
+  Emma: "en-GB-Standard-C",    // ✅ Female
+  Joey: "en-US-Standard-D",    // Male
+  Justin: "en-US-Standard-B",  // Male (child-like)
+  Matthew: "en-US-Standard-A", // Male
+  Ivy: "en-US-Standard-F",     // Female (child)
+  Joanna: "en-US-Standard-C",  // Female
+  Salli: "en-US-Standard-G",   // Female
+  Nicole: "en-AU-Standard-A",  // Female
+  Russell: "en-AU-Standard-B", // Male
+  Raveena: "en-IN-Standard-A", // Female
 
   // European
-  Vitoria: "pt-PT-Neural2-A",
-  Celine: "fr-FR-Neural2-A",
-  Karl: "de-DE-Neural2-B",
-  Marlene: "de-DE-Neural2-A",
-  Giorgio: "it-IT-Neural2-B",
-  Bianca: "it-IT-Neural2-A",
-  Astrid: "sv-SE-Neural2-A",
-  Filiz: "tr-TR-Neural2-A",
-  Tatyana: "ru-RU-Neural2-A",
-  Maxim: "ru-RU-Neural2-B",
+  Vitoria: "pt-PT-Standard-A",
+  Celine: "fr-FR-Standard-A",
+  Karl: "de-DE-Standard-B",
+  Marlene: "de-DE-Standard-A",
+  Giorgio: "it-IT-Standard-B",
+  Bianca: "it-IT-Standard-A",
+  Astrid: "sv-SE-Standard-A",
+  Filiz: "tr-TR-Standard-A",
+  Tatyana: "ru-RU-Standard-A",
+  Maxim: "ru-RU-Standard-B",
 // Spanish
-  Lucia: "es-ES-Neural2-A",
-  Enrique: "es-ES-Neural2-B",
-  Penelope: "es-US-Neural2-A",
-  Miguel: "es-US-Neural2-B",
+  Lucia: "es-ES-Standard-A",
+  Enrique: "es-ES-Standard-B",
+  Penelope: "es-US-Standard-A",
+  Miguel: "es-US-Standard-B",
   // Asian
-  Mizuki: "ja-JP-Neural2-A",
-  Takumi: "ja-JP-Neural2-B",
-  Seoyeon: "ko-KR-Neural2-A",
-  Aditi: "hi-IN-Neural2-A",
+  Mizuki: "ja-JP-Standard-A",
+  Takumi: "ja-JP-Standard-B",
+  Seoyeon: "ko-KR-Standard-A",
+  Aditi: "hi-IN-Standard-A",
 };
 
 
-    const mappedVoice = voiceNameMap[voice] || "en-US-Neural2-B";
+    const mappedVoice = voiceNameMap[voice] || "en-US-Standard-B";
 
-   const [response] = await client.synthesizeSpeech({
-  input: { ssml },
-  voice: {
-    languageCode: mappedVoice.split("-").slice(0, 2).join("-"),
-    name: mappedVoice,
-  },
-  audioConfig: {
-    audioEncoding: "MP3",
-    speakingRate: 1.0,
-    pitch: 0,
-  },
-});
-
+    const [response] = await client.synthesizeSpeech({
+      input: { ssml },
+      voice: {
+        languageCode: mappedVoice.split("-").slice(0, 2).join("-"),
+        name: mappedVoice,
+      },
+      audioConfig: { audioEncoding: "MP3" },
+    });
 
     const audioContent = response.audioContent?.toString("base64");
     if (!audioContent) {
@@ -89,10 +84,9 @@ export async function POST(req: Request) {
         },
       }
     );
-  } catch (err: unknown) {
+  } catch (err: any) {
     console.error("TTS Error:", err);
-    const message = err instanceof Error ? err.message : typeof err === "string" ? err : String(err ?? "TTS failed");
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "TTS failed" }, { status: 500 });
   }
 }
 
