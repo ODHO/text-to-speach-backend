@@ -1,81 +1,111 @@
-// pages/api/tts.ts (or app/api/tts/route.ts for app router)
+// pages/api/tts.ts
 import { NextResponse } from "next/server";
 import textToSpeech from "@google-cloud/text-to-speech";
 import { Buffer } from "buffer";
 
 const credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT_JSON || "{}");
-
-const client = new textToSpeech.TextToSpeechClient({
-  credentials,
-});
+const client = new textToSpeech.TextToSpeechClient({ credentials });
 
 export async function POST(req: Request) {
   try {
     const { ssml, voice } = await req.json();
 
-    if (!ssml || typeof ssml !== "string") {
+    if (!ssml || typeof ssml !== "string")
       return NextResponse.json({ error: "Missing SSML text" }, { status: 400 });
-    }
 
-    // Map old voice names to Google equivalents
-  const voiceNameMap: Record<string, string> = {
-  // English
-  Brian: "en-GB-Standard-B",   // ✅ Male
-  Amy: "en-GB-Standard-A",     // ✅ Female
-  Emma: "en-GB-Standard-C",    // ✅ Female
-  Joey: "en-US-Standard-D",    // Male
-  Justin: "en-US-Standard-B",  // Male (child-like)
-  Matthew: "en-US-Standard-A", // Male
-  Ivy: "en-US-Standard-F",     // Female (child)
-  Joanna: "en-US-Standard-C",  // Female
-  Salli: "en-US-Standard-G",   // Female
-  Nicole: "en-AU-Standard-A",  // Female
-  Russell: "en-AU-Standard-B", // Male
-  Raveena: "en-IN-Standard-A", // Female
-  // European
-  Vitoria: "pt-PT-Standard-A",
-  Celine: "fr-FR-Standard-A",
-  Karl: "de-DE-Standard-B",
-  Marlene: "de-DE-Standard-A",
-  Giorgio: "it-IT-Standard-B",
-  Bianca: "it-IT-Standard-A",
-  Astrid: "sv-SE-Standard-A",
-  Filiz: "tr-TR-Standard-A",
-  Tatyana: "ru-RU-Standard-A",
-  Maxim: "ru-RU-Standard-B",
-// Spanish
-  Lucia: "es-ES-Standard-A",
-  Enrique: "es-ES-Standard-B",
-  Penelope: "es-US-Standard-A",
-  Miguel: "es-US-Standard-B",
-  // Arabic
-  ArabicA: "ar-XA-Standard-A",
-  ArabicB: "ar-XA-Standard-B",
-  ArabicC: "ar-XA-Standard-C",
-  ArabicD: "ar-XA-Standard-D",
-  // Asian
-  Mizuki: "ja-JP-Standard-A",
-  Takumi: "ja-JP-Standard-B",
-  Seoyeon: "ko-KR-Standard-A",
-  Aditi: "hi-IN-Standard-A",
-};
+    // ✅ Map voices including Arabic
+    const voiceNameMap: Record<string, string> = {
+      // English
+      Brian: "en-GB-Standard-B",
+      Amy: "en-GB-Standard-A",
+      Emma: "en-GB-Standard-C",
+      Joey: "en-US-Standard-D",
+      Justin: "en-US-Standard-B",
+      Matthew: "en-US-Standard-A",
+      Ivy: "en-US-Standard-F",
+      Joanna: "en-US-Standard-C",
+      Salli: "en-US-Standard-G",
+      Nicole: "en-AU-Standard-A",
+      Russell: "en-AU-Standard-B",
+      Raveena: "en-IN-Standard-A",
 
+      // European
+      Vitoria: "pt-PT-Standard-A",
+      Celine: "fr-FR-Standard-A",
+      Karl: "de-DE-Standard-B",
+      Marlene: "de-DE-Standard-A",
+      Giorgio: "it-IT-Standard-B",
+      Bianca: "it-IT-Standard-A",
+      Astrid: "sv-SE-Standard-A",
+      Filiz: "tr-TR-Standard-A",
+      Tatyana: "ru-RU-Standard-A",
+      Maxim: "ru-RU-Standard-B",
+
+      // Spanish
+      Lucia: "es-ES-Standard-A",
+      Enrique: "es-ES-Standard-B",
+      Penelope: "es-US-Standard-A",
+      Miguel: "es-US-Standard-B",
+
+      // ✅ Arabic
+      ArabicA: "ar-XA-Standard-A",
+      ArabicB: "ar-XA-Standard-B",
+      ArabicC: "ar-XA-Standard-C",
+      ArabicD: "ar-XA-Standard-D",
+
+      // Asian
+      Mizuki: "ja-JP-Standard-A",
+      Takumi: "ja-JP-Standard-B",
+      Seoyeon: "ko-KR-Standard-A",
+      Aditi: "hi-IN-Standard-A",
+    };
 
     const mappedVoice = voiceNameMap[voice] || "en-US-Standard-B";
 
-    const [response] = await client.synthesizeSpeech({
-      input: { ssml },
-      voice: {
-        languageCode: mappedVoice.split("-").slice(0, 2).join("-"),
-        name: mappedVoice,
-      },
-      audioConfig: { audioEncoding: "MP3" },
-    });
+    // ✅ Ensure safe SSML chunking (split if over 5000 bytes)
+    const maxBytes = 4800;
+    const encoder = new TextEncoder();
+    const ssmlBytes = encoder.encode(ssml);
 
-    const audioContent = response.audioContent?.toString("base64");
-    if (!audioContent) {
-      return NextResponse.json({ error: "No audio content returned" }, { status: 500 });
+    if (ssmlBytes.length > maxBytes) {
+      console.warn(`SSML too long (${ssmlBytes.length} bytes) → splitting.`);
     }
+
+    const chunks: string[] = [];
+    let currentChunk: string[] = [];
+    let currentLength = 0;
+
+    for (const char of ssml) {
+      const bytes = encoder.encode(char);
+      if (currentLength + bytes.length > maxBytes) {
+        chunks.push(currentChunk.join(""));
+        currentChunk = [];
+        currentLength = 0;
+      }
+      currentChunk.push(char);
+      currentLength += bytes.length;
+    }
+    if (currentChunk.length) chunks.push(currentChunk.join(""));
+
+    const audioParts: Buffer[] = [];
+
+    for (const chunk of chunks) {
+      const [response] = await client.synthesizeSpeech({
+        input: { ssml: chunk },
+        voice: {
+          languageCode: mappedVoice.split("-").slice(0, 2).join("-"),
+          name: mappedVoice,
+        },
+        audioConfig: { audioEncoding: "MP3" },
+      });
+
+      if (response.audioContent) {
+        audioParts.push(Buffer.from(response.audioContent, "base64"));
+      }
+    }
+
+    const merged = Buffer.concat(audioParts);
+    const audioContent = merged.toString("base64");
 
     return NextResponse.json(
       { audioContent },
@@ -90,16 +120,22 @@ export async function POST(req: Request) {
     );
   } catch (err: any) {
     console.error("TTS Error:", err);
-    return NextResponse.json({ error: err.message || "TTS failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "TTS failed" },
+      { status: 500 }
+    );
   }
 }
 
 export async function OPTIONS() {
-  return NextResponse.json({}, {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return NextResponse.json(
+    {},
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    }
+  );
 }
