@@ -48,6 +48,11 @@ export async function POST(req: Request) {
   Enrique: "es-ES-Standard-B",
   Penelope: "es-US-Standard-A",
   Miguel: "es-US-Standard-B",
+  // Arabic
+  ArabicA: "ar-XA-Standard-A",
+  ArabicB: "ar-XA-Standard-B",
+  ArabicC: "ar-XA-Standard-C",
+  ArabicD: "ar-XA-Standard-D",
   // Asian
   Mizuki: "ja-JP-Standard-A",
   Takumi: "ja-JP-Standard-B",
