@@ -100,7 +100,13 @@ export async function POST(req: Request) {
       });
 
       if (response.audioContent) {
-        audioParts.push(Buffer.from(response.audioContent, "base64"));
+        if (typeof response.audioContent === "string") {
+          // audioContent as base64-encoded string
+          audioParts.push(Buffer.from(response.audioContent, "base64"));
+        } else {
+          // audioContent as binary (Uint8Array or Buffer)
+          audioParts.push(Buffer.from(response.audioContent));
+        }
       }
     }
 
