@@ -38,8 +38,20 @@ export async function POST(req: Request) {
       Bianca: "it-IT-Standard-A",
       Astrid: "sv-SE-Standard-A",
       Filiz: "tr-TR-Standard-A",
-      Tatyana: "ru-RU-Standard-A",
-      Maxim: "ru-RU-Standard-B",
+      // Tatyana: "ru-RU-Standard-A",
+      // Maxim: "ru-RU-Standard-B",
+
+      // 🇷🇺 Russian (Standard)
+  Tatyana: "ru-RU-Standard-A",
+  Maxim: "ru-RU-Standard-B",
+  RussianC: "ru-RU-Standard-C",
+  RussianD: "ru-RU-Standard-D",
+
+  // 🇷🇺 Russian (Neural)
+  // RussianNeuralA: "ru-RU-Neural2-A",
+  // RussianNeuralB: "ru-RU-Neural2-B",
+  // RussianNeuralC: "ru-RU-Neural2-C",
+  // RussianNeuralD: "ru-RU-Neural2-D",
 
       // Spanish
       Lucia: "es-ES-Standard-A",
