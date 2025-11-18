@@ -14,65 +14,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing SSML text" }, { status: 400 });
 
     // ✅ Map voices including Arabic
-    const voiceNameMap: Record<string, string> = {
-      // English
-      Brian: "en-GB-Standard-B",
-      Amy: "en-GB-Standard-A",
-      Emma: "en-GB-Standard-C",
-      Joey: "en-US-Standard-D",
-      Justin: "en-US-Standard-B",
-      Matthew: "en-US-Standard-A",
-      Ivy: "en-US-Standard-F",
-      Joanna: "en-US-Standard-C",
-      Salli: "en-US-Standard-G",
-      Nicole: "en-AU-Standard-A",
-      Russell: "en-AU-Standard-B",
-      Raveena: "en-IN-Standard-A",
+   const voiceNameMap: Record<string, string> = {
+  // English Neural
+  Brian: "en-GB-Neural-B",
+  Amy: "en-GB-Neural-A",
+  Emma: "en-GB-Neural-C",
+  Joey: "en-US-Neural-D",
+  Justin: "en-US-Neural-B",
+  Matthew: "en-US-Neural-A",
+  Ivy: "en-US-Neural-F",
+  Joanna: "en-US-Neural-C",
+  Salli: "en-US-Neural-G",
+  Nicole: "en-AU-Neural-A",
+  Russell: "en-AU-Neural-B",
+  Raveena: "en-IN-Neural-A",
 
-      // European
-      Vitoria: "pt-PT-Standard-A",
-      Celine: "fr-FR-Standard-A",
-      Karl: "de-DE-Standard-B",
-      Marlene: "de-DE-Standard-A",
-      Giorgio: "it-IT-Standard-B",
-      Bianca: "it-IT-Standard-A",
-      Astrid: "sv-SE-Standard-A",
-      Filiz: "tr-TR-Standard-A",
-      // Tatyana: "ru-RU-Standard-A",
-      // Maxim: "ru-RU-Standard-B",
+  // European Neural
+  Vitoria: "pt-PT-Neural-A",
+  Celine: "fr-FR-Neural-A",
+  Karl: "de-DE-Neural-A",
+  Marlene: "de-DE-Neural-B",
+  Giorgio: "it-IT-Neural-A",
+  Bianca: "it-IT-Neural-B",
+  Astrid: "sv-SE-Neural-A",
+  Filiz: "tr-TR-Neural-A",
+  Tatyana: "ru-RU-Neural2-A",
+  Maxim: "ru-RU-Neural2-B",
 
-      // 🇷🇺 Russian (Standard)
-  Tatyana: "ru-RU-Standard-A",
-  Maxim: "ru-RU-Standard-B",
-  RussianC: "ru-RU-Standard-C",
-  RussianD: "ru-RU-Standard-D",
+  // Asian Neural
+  Mizuki: "ja-JP-Neural-A",
+  Takumi: "ja-JP-Neural-B",
+  Seoyeon: "ko-KR-Neural-A",
+  Aditi: "hi-IN-Neural-A",
+};
 
-  // 🇷🇺 Russian (Neural)
-  // RussianNeuralA: "ru-RU-Neural2-A",
-  // RussianNeuralB: "ru-RU-Neural2-B",
-  // RussianNeuralC: "ru-RU-Neural2-C",
-  // RussianNeuralD: "ru-RU-Neural2-D",
 
-      // Spanish
-      Lucia: "es-ES-Standard-A",
-      Enrique: "es-ES-Standard-B",
-      Penelope: "es-US-Standard-A",
-      Miguel: "es-US-Standard-B",
-
-      // ✅ Arabic
-      ArabicA: "ar-XA-Standard-A",
-      ArabicB: "ar-XA-Standard-B",
-      ArabicC: "ar-XA-Standard-C",
-      ArabicD: "ar-XA-Standard-D",
-
-      // Asian
-      Mizuki: "ja-JP-Standard-A",
-      Takumi: "ja-JP-Standard-B",
-      Seoyeon: "ko-KR-Standard-A",
-      Aditi: "hi-IN-Standard-A",
-    };
-
-    const mappedVoice = voiceNameMap[voice] || "en-US-Standard-B";
+    const mappedVoice = voiceNameMap[voice] || "en-US-Neural-B";
 
     // ✅ Ensure safe SSML chunking (split if over 5000 bytes)
     const maxBytes = 4800;
@@ -157,3 +134,8 @@ export async function OPTIONS() {
     }
   );
 }
+
+
+
+
+
