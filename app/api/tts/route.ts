@@ -16,55 +16,63 @@ export async function POST(req: Request) {
     // ✅ Map voices including Arabic
     const voiceNameMap: Record<string, string> = {
       // English
-      Brian: "en-GB-Neural2-B",
-      Amy: "en-GB-Neural2-A",
-      Emma: "en-GB-Neural2-C",
-      Joey: "en-US-Neural2-D",
-      Justin: "en-US-Neural2-B",
-      Matthew: "en-US-Neural2-A",
-      Ivy: "en-US-Neural2-F",
-      Joanna: "en-US-Neural2-C",
-      Salli: "en-US-Neural2-G",
-      Nicole: "en-AU-Neural2-A",
-      Russell: "en-AU-Neural2-B",
-      Raveena: "en-IN-Neural2-A",
+      Brian: "en-GB-Standard-B",
+      Amy: "en-GB-Standard-A",
+      Emma: "en-GB-Standard-C",
+      Joey: "en-US-Standard-D",
+      Justin: "en-US-Standard-B",
+      Matthew: "en-US-Standard-A",
+      Ivy: "en-US-Standard-F",
+      Joanna: "en-US-Standard-C",
+      Salli: "en-US-Standard-G",
+      Nicole: "en-AU-Standard-A",
+      Russell: "en-AU-Standard-B",
+      Raveena: "en-IN-Standard-A",
 
       // European
-      Vitoria: "pt-PT-Neural2-A",
-      Celine: "fr-FR-Neural2-A",
-      Karl: "de-DE-Neural2-B",
-      Marlene: "de-DE-Neural2-A",
-      Giorgio: "it-IT-Neural2-B",
-      Bianca: "it-IT-Neural2-A",
-      Astrid: "sv-SE-Neural2-A",
-      Filiz: "tr-TR-Neural2-A",
+      Vitoria: "pt-PT-Standard-A",
+      Celine: "fr-FR-Standard-A",
+      Karl: "de-DE-Standard-B",
+      Marlene: "de-DE-Standard-A",
+      Giorgio: "it-IT-Standard-B",
+      Bianca: "it-IT-Standard-A",
+      Astrid: "sv-SE-Standard-A",
+      Filiz: "tr-TR-Standard-A",
+      // Tatyana: "ru-RU-Standard-A",
+      // Maxim: "ru-RU-Standard-B",
 
-      // 🇷🇺 Russian (Neural2)
-  Tatyana: "ru-RU-Neural2-A",
-  Maxim: "ru-RU-Neural2-B",
-  RussianC: "ru-RU-Neural2-C",
-  RussianD: "ru-RU-Neural2-D",
+      // 🇷🇺 Russian (Standard)
+  Tatyana: "ru-RU-Standard-A",
+  Maxim: "ru-RU-Standard-B",
+  RussianC: "ru-RU-Standard-C",
+  RussianD: "ru-RU-Standard-D",
+
+  // 🇷🇺 Russian (Neural)
+  // RussianNeuralA: "ru-RU-Neural2-A",
+  // RussianNeuralB: "ru-RU-Neural2-B",
+  // RussianNeuralC: "ru-RU-Neural2-C",
+  // RussianNeuralD: "ru-RU-Neural2-D",
 
       // Spanish
-      Lucia: "es-ES-Neural2-A",
-      Enrique: "es-ES-Neural2-B",
-      Penelope: "es-US-Neural2-A",
-      Miguel: "es-US-Neural2-B",
+      Lucia: "es-ES-Standard-A",
+      Enrique: "es-ES-Standard-B",
+      Penelope: "es-US-Standard-A",
+      Miguel: "es-US-Standard-B",
 
       // ✅ Arabic
-      ArabicA: "ar-XA-Neural2-A",
-      ArabicB: "ar-XA-Neural2-B",
-      ArabicC: "ar-XA-Neural2-C",
-      ArabicD: "ar-XA-Neural2-D",
+      ArabicA: "ar-XA-Standard-A",
+      ArabicB: "ar-XA-Standard-B",
+      ArabicC: "ar-XA-Standard-C",
+      ArabicD: "ar-XA-Standard-D",
 
       // Asian
-      Mizuki: "ja-JP-Neural2-A",
-      Takumi: "ja-JP-Neural2-B",
-      Seoyeon: "ko-KR-Neural2-A",
-      Aditi: "hi-IN-Neural2-A",
+      Mizuki: "ja-JP-Standard-A",
+      Takumi: "ja-JP-Standard-B",
+      Seoyeon: "ko-KR-Standard-A",
+      Aditi: "hi-IN-Standard-A",
     };
 
-    const mappedVoice = voiceNameMap[voice] || "en-US-Neural2-B";
+    const mappedVoice = voiceNameMap[voice] || "en-US-Standard-B";
 
     // ✅ Ensure safe SSML chunking (split if over 5000 bytes)
     const maxBytes = 4800;
