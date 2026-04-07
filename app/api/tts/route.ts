@@ -1,125 +1,103 @@
-// pages/api/tts.ts
 import { NextResponse } from "next/server";
-import textToSpeech from "@google-cloud/text-to-speech";
+import OpenAI from "openai";
 import { Buffer } from "buffer";
 
-const credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT_JSON || "{}");
-const client = new textToSpeech.TextToSpeechClient({ credentials });
+// Initialize OpenAI using the environment variable as requested
+const openai = new OpenAI({
+  apiKey: process.env.VITE_CHAT_GPT || process.env.OPENAI_API_KEY,
+});
 
 export async function POST(req: Request) {
   try {
     const { ssml, voice } = await req.json();
 
     if (!ssml || typeof ssml !== "string")
-      return NextResponse.json({ error: "Missing SSML text" }, { status: 400 });
+      return NextResponse.json({ error: "Missing text/SSML" }, { status: 400 });
 
-    // ✅ Map voices including Arabic
-    const voiceNameMap: Record<string, string> = {
-      // English
-      Brian: "en-GB-Standard-B",
-      Amy: "en-GB-Standard-A",
-      Emma: "en-GB-Standard-C",
-      Joey: "en-US-Standard-D",
-      Justin: "en-US-Standard-B",
-      Matthew: "en-US-Standard-A",
-      Ivy: "en-US-Standard-F",
-      Joanna: "en-US-Standard-C",
-      Salli: "en-US-Standard-G",
-      Nicole: "en-AU-Standard-A",
-      Russell: "en-AU-Standard-B",
-      Raveena: "en-IN-Standard-A",
+    // OpenAI TTS does not natively interpret SSML, so we strip out the tags to get clean text.
+    const text = ssml.replace(/<[^>]*>?/gm, '').trim();
+    if (!text) {
+      return NextResponse.json({ error: "Text is empty after stripping SSML" }, { status: 400 });
+    }
 
-      // European
-      Vitoria: "pt-PT-Standard-A",
-      Celine: "fr-FR-Standard-A",
-      Karl: "de-DE-Standard-B",
-      Marlene: "de-DE-Standard-A",
-      Giorgio: "it-IT-Standard-B",
-      Bianca: "it-IT-Standard-A",
-      Astrid: "sv-SE-Standard-A",
-      Filiz: "tr-TR-Standard-A",
-      // Tatyana: "ru-RU-Standard-A",
-      // Maxim: "ru-RU-Standard-B",
-
-      // 🇷🇺 Russian (Standard)
-  Tatyana: "ru-RU-Standard-A",
-  Maxim: "ru-RU-Standard-B",
-  RussianC: "ru-RU-Standard-C",
-  RussianD: "ru-RU-Standard-D",
-
-  // 🇷🇺 Russian (Neural)
-  // RussianNeuralA: "ru-RU-Neural2-A",
-  // RussianNeuralB: "ru-RU-Neural2-B",
-  // RussianNeuralC: "ru-RU-Neural2-C",
-  // RussianNeuralD: "ru-RU-Neural2-D",
-
-      // Spanish
-      Lucia: "es-ES-Standard-A",
-      Enrique: "es-ES-Standard-B",
-      Penelope: "es-US-Standard-A",
-      Miguel: "es-US-Standard-B",
-
-      // ✅ Arabic
-      ArabicA: "ar-XA-Standard-A",
-      ArabicB: "ar-XA-Standard-B",
-      ArabicC: "ar-XA-Standard-C",
-      ArabicD: "ar-XA-Standard-D",
-
-      // Asian
-      Mizuki: "ja-JP-Standard-A",
-      Takumi: "ja-JP-Standard-B",
-      Seoyeon: "ko-KR-Standard-A",
-      Aditi: "hi-IN-Standard-A",
+    // Map old frontend voice names to OpenAI voices to maintain backward compatibility
+    const openaiVoices: Record<string, "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer"> = {
+      Brian: "echo",
+      Amy: "nova",
+      Emma: "shimmer",
+      Joey: "onyx",
+      Justin: "echo",
+      Matthew: "onyx",
+      Ivy: "nova",
+      Joanna: "shimmer",
+      Salli: "nova",
+      Nicole: "nova",
+      Russell: "echo",
+      Raveena: "shimmer",
+      Vitoria: "nova",
+      Celine: "shimmer",
+      Karl: "onyx",
+      Marlene: "nova",
+      Giorgio: "echo",
+      Bianca: "shimmer",
+      Astrid: "nova",
+      Filiz: "shimmer",
+      Tatyana: "nova",
+      Maxim: "onyx",
+      RussianC: "shimmer",
+      RussianD: "echo",
+      Lucia: "nova",
+      Enrique: "echo",
+      Penelope: "shimmer",
+      Miguel: "onyx",
+      ArabicA: "nova",
+      ArabicB: "echo",
+      ArabicC: "shimmer",
+      ArabicD: "onyx",
+      Mizuki: "shimmer",
+      Takumi: "echo",
+      Seoyeon: "nova",
+      Aditi: "shimmer",
     };
 
-    const mappedVoice = voiceNameMap[voice] || "en-US-Standard-B";
-
-    // ✅ Ensure safe SSML chunking (split if over 5000 bytes)
-    const maxBytes = 4800;
-    const encoder = new TextEncoder();
-    const ssmlBytes = encoder.encode(ssml);
-
-    if (ssmlBytes.length > maxBytes) {
-      console.warn(`SSML too long (${ssmlBytes.length} bytes) → splitting.`);
+    let selectedVoice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "alloy";
+    if (["alloy", "echo", "fable", "onyx", "nova", "shimmer"].includes(voice)) {
+      selectedVoice = voice as typeof selectedVoice;
+    } else if (openaiVoices[voice]) {
+      selectedVoice = openaiVoices[voice];
     }
 
+    // OpenAI max characters limit is 4096 per request. We'll chunk safely at 4000.
+    const maxChars = 4000;
     const chunks: string[] = [];
-    let currentChunk: string[] = [];
-    let currentLength = 0;
+    let currentChunk = "";
 
-    for (const char of ssml) {
-      const bytes = encoder.encode(char);
-      if (currentLength + bytes.length > maxBytes) {
-        chunks.push(currentChunk.join(""));
-        currentChunk = [];
-        currentLength = 0;
+    if (text.length > maxChars) {
+      const words = text.split(" ");
+      for (const word of words) {
+        if (currentChunk.length + word.length + 1 > maxChars) {
+          chunks.push(currentChunk);
+          currentChunk = word + " ";
+        } else {
+          currentChunk += word + " ";
+        }
       }
-      currentChunk.push(char);
-      currentLength += bytes.length;
+      if (currentChunk.trim().length > 0) chunks.push(currentChunk.trim());
+    } else {
+      chunks.push(text);
     }
-    if (currentChunk.length) chunks.push(currentChunk.join(""));
 
     const audioParts: Buffer[] = [];
 
     for (const chunk of chunks) {
-      const [response] = await client.synthesizeSpeech({
-        input: { ssml: chunk },
-        voice: {
-          languageCode: mappedVoice.split("-").slice(0, 2).join("-"),
-          name: mappedVoice,
-        },
-        audioConfig: { audioEncoding: "MP3" },
+      if (!chunk.trim()) continue;
+      const mp3 = await openai.audio.speech.create({
+        model: "tts-1",
+        voice: selectedVoice,
+        input: chunk,
       });
-
-      if (response.audioContent) {
-        if (typeof response.audioContent === "string") {
-          // audioContent as base64-encoded string
-          audioParts.push(Buffer.from(response.audioContent, "base64"));
-        } else {
-          // audioContent as binary (Uint8Array or Buffer)
-          audioParts.push(Buffer.from(response.audioContent));
-        }
-      }
+      const buffer = Buffer.from(await mp3.arrayBuffer());
+      audioParts.push(buffer);
     }
 
     const merged = Buffer.concat(audioParts);
